@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { AddTaskEntry } from './features/tasks/AddTaskEntry'
 import { TimeGranularityNav } from './features/filters/TimeGranularityNav'
 import { TaskList } from './features/tasks/TaskList'
 import { useTaskStore } from './stores/taskStore'
@@ -22,9 +23,10 @@ export default function App() {
         </div>
         <TimeGranularityNav />
       </header>
-      <main>
+      <main className="relative min-h-[40vh]">
         <TaskList />
       </main>
+      <AddTaskEntry />
     </div>
   )
 }

@@ -56,13 +56,18 @@
 
 ## 经验教训
 
+### 2026-05-06 · 新增任务：FAB、Modal 表单与校验
+
+- **可复现要点**：底部固定 `fixed bottom-6 right-6` 的圆形 FAB（`bg-blue-600`）打开 `AddTaskModal`；表单提交走 `useTaskStore.getState().addTask`（`persist` 仍为 `taskApp_tasks`），标题用 `trim()` 校验，空格-only 视为无效。模块化：`categoryOptions.ts` 承载分类下拉常量/类型；`TaskPriorityFieldset`、`TaskCategoryFields` 为纯展示，保证 `AddTaskModal` 不超过 200 行。
+- **易错点**：Modal 再次打开时若不在 `open` 变化时重置 state，会残留上次错误提示或字段；通过在 `useAddTaskForm` 内对 `open` 的 `useEffect` 统一重置解决。`Escape` 与点击遮罩关闭需在 `open` 为真时注册监听并在卸载时移除。
+
 ### 2026-05-06 · 时间筛选锚点与「今日」
 
 - **要点**：「本月 / 本周 / 今日」应对齐当前日历；在 `App` 挂载时用 `todayISODate()` 写回 store 的 `referenceDate`，避免 `persist` 长期保留旧日期导致筛选与直觉不符（单测仅渲染子树时仍可通过 `setState` 固定锚点日期）。
 
 ### 2026-05-06 · 第一阶段：Vite + React 脚手架、任务列表与时间筛选
 
-- **可复现要点**：`vite.config.ts` 中 Vitest 配置需使用 `import { defineConfig } from 'vitest/config'`，否则 `tsc -b` 会报 `test` 不是合法字段；`src/features/**` 内引用 `utils` / `stores` / `components` 时要比 `src/` 下多一层 `../`。
+- **可复现要点**：`vite.config.ts` 中 Vitest 配置需使用 `import { defineConfig } from 'vitest/config'`，否则 `tsc -b` 会报 `test` 不是合法字段；`src/features/`** 内引用 `utils` / `stores` / `components` 时要比 `src/` 下多一层 `../`。
 - **易错点**：安装依赖被中断时可能出现 `esbuild` 的 `install.js` 缺失，需删除 `node_modules`（必要时连 `package-lock.json`）后重装；带 `persist` 的 Zustand store 在测试中须在 `setState` 前 `localStorage.clear()`，否则会读回旧持久化数据覆盖用例初始状态。
 - **覆盖率**：仓库已安装 `@vitest/coverage-v8`，执行 `npm run test -- --coverage` 可生成报告。
 
