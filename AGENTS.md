@@ -35,6 +35,34 @@
 
 所有 PR / 提交前必须通过 lint 和 test。
 
+## Git 与 GitHub（推送到远程）
+
+- **远程仓库**：`https://github.com/oliverwudy0710-hue/woody.project-management.git`
+- **默认分支**：`main`
+- **日常推送**（在本机项目根目录执行）：
+
+```bash
+git status
+git add -A
+git commit -m "简明说明本次改动"
+git push
+```
+
+若本地分支尚未绑定远程 `main`，或第一次从该电脑推送：
+
+```bash
+git push -u origin main
+```
+
+- **修改远程地址**（例如仓库迁移或远程填错时）：
+
+```bash
+git remote set-url origin https://github.com/oliverwudy0710-hue/woody.project-management.git
+git remote -v
+```
+
+- **HTTPS 认证**：终端提示输入密码时，使用 **Personal Access Token**（不能使用 GitHub 登录密码）。细粒度令牌须在 **Repository permissions** 中为 **Contents** 勾选 **Read and write**，且 **Repository access** 须包含本仓库（或 All repositories）。若出现 403，检查令牌权限，并在 macOS **钥匙串访问** 中删除旧的 `github.com` 凭据后重试 `git push`。
+
 ## 工作约定
 
 ### 需求澄清
