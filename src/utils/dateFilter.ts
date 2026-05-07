@@ -7,7 +7,7 @@ export function todayISODate(): string {
   return `${y}-${m}-${d}`
 }
 
-function parseYMD(s: string): { y: number; m: number; d: number } {
+export function parseYMD(s: string): { y: number; m: number; d: number } {
   const [y, m, d] = s.split('-').map(Number)
   return { y, m: m ?? 1, d: d ?? 1 }
 }
@@ -24,7 +24,6 @@ export function dateOnSameDay(scheduled: string, ref: string): boolean {
   return scheduled === ref
 }
 
-/** Week is Monday–Sunday (local). `ref` is any YYYY-MM-DD in that week. */
 export function dateInSameWeek(scheduled: string, ref: string): boolean {
   const r = parseYMD(ref)
   const refDt = ymdToDate(r.y, r.m, r.d)
@@ -37,16 +36,4 @@ export function dateInSameWeek(scheduled: string, ref: string): boolean {
   const s = parseYMD(scheduled)
   const schedDt = ymdToDate(s.y, s.m, s.d)
   return schedDt >= monday && schedDt <= sunday
-}
-
-export function filterTasksByGranularity<T extends { scheduledDate: string }>(
-  tasks: T[],
-  granularity: 'day' | 'week' | 'month',
-  referenceDate: string,
-): T[] {
-  return tasks.filter((t) => {
-    if (granularity === 'day') return dateOnSameDay(t.scheduledDate, referenceDate)
-    if (granularity === 'week') return dateInSameWeek(t.scheduledDate, referenceDate)
-    return dateInSameMonth(t.scheduledDate, referenceDate)
-  })
 }

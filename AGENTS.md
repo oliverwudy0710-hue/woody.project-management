@@ -56,6 +56,11 @@
 
 ## 经验教训
 
+### 2026-05-06 · 实施周期 + 进度侧栏（飞书式一期）
+
+- **可复现要点**：任务模型用 `implementationStart/End` 替代 `scheduledDate`；列表筛选改为区间与「锚定日/周/月」是否**相交**（`taskVisibleInImplementationWindow` + `ymdRangesOverlap`）；`persist` 的 `migrate` 收到的已是 **`partialize` 后的切片**（仅 `tasks` / `timeGranularity` / `referenceDate`），需在迁移函数中把旧任务的 `scheduledDate` 映射为起止日期。卡片**主体不响应点击编辑**，仅「更新进度」打开 `TaskProgressPanel`（`z-[60]`）；状态切到 `completed` 时在 store 内强制 `progressPercent = 100`；`completed`/`cancelled` 下禁止再 `appendProgressLog`。
+- **易错点**：`migrateTask` 里把 `Record` 断言为 `Task` 会触发 TS2352，需 `as unknown as Task`；`updateTask` 中合并 patch 后应用 `prefer-const` 可读写法。进展表单用 `defaultValue` 时切换任务要加 **`key={task.id}`** 或控制组件，否则日期仍显示上一任务打开时的值。
+
 ### 2026-05-06 · 新增任务：FAB、Modal 表单与校验
 
 - **可复现要点**：底部固定 `fixed bottom-6 right-6` 的圆形 FAB（`bg-blue-600`）打开 `AddTaskModal`；表单提交走 `useTaskStore.getState().addTask`（`persist` 仍为 `taskApp_tasks`），标题用 `trim()` 校验，空格-only 视为无效。模块化：`categoryOptions.ts` 承载分类下拉常量/类型；`TaskPriorityFieldset`、`TaskCategoryFields` 为纯展示，保证 `AddTaskModal` 不超过 200 行。
