@@ -27,7 +27,7 @@ export interface TaskListToolbarProps {
   sortKey: TaskSortKey
   onSortKeyChange: (v: TaskSortKey) => void
   subTagOptions: string[]
-  visibleCount: number
+  matchedCount: number
 }
 
 export function TaskListToolbar({
@@ -40,7 +40,7 @@ export function TaskListToolbar({
   sortKey,
   onSortKeyChange,
   subTagOptions,
-  visibleCount,
+  matchedCount,
 }: TaskListToolbarProps) {
   const timeGranularity = useTaskStore((s) => s.timeGranularity)
   const setTimeGranularity = useTaskStore((s) => s.setTimeGranularity)
@@ -66,7 +66,7 @@ export function TaskListToolbar({
 
   return (
     <div
-      className="mb-6 rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-sm shadow-slate-200/40 ring-1 ring-slate-100/80 backdrop-blur-sm"
+      className="mb-3 rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-sm shadow-slate-200/40 ring-1 ring-slate-100/80 backdrop-blur-sm"
       data-testid="task-list-toolbar"
     >
       <div className="flex flex-col gap-5">
@@ -227,8 +227,8 @@ export function TaskListToolbar({
           </div>
 
           <div className="flex shrink-0 items-center gap-2 rounded-xl bg-indigo-50/80 px-3 py-2 ring-1 ring-indigo-100">
-            <span className="text-2xl font-bold tabular-nums text-indigo-700">{visibleCount}</span>
-            <span className="text-xs font-medium leading-tight text-indigo-900/80">个任务</span>
+            <span className="text-2xl font-bold tabular-nums text-indigo-700">{matchedCount}</span>
+            <span className="text-xs font-medium leading-tight text-indigo-900/80">条匹配</span>
           </div>
         </div>
       </div>

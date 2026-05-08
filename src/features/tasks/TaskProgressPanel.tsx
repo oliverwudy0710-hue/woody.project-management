@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import type { TaskStatus } from './types'
 import { ProgressLogTimeline } from './ProgressLogTimeline'
 import { TaskDetailSection } from './TaskDetailSection'
-import { RightDrawer } from '../../components/RightDrawer'
+import { WorkspaceSidePanel } from '../../components/WorkspaceSidePanel'
 import { useTaskStore } from '../../stores/taskStore'
 import { taskStatusLabel } from '../../utils/taskStatusLabels'
 import { taskStatusPillClass } from '../../utils/taskStatusVisual'
@@ -37,10 +37,11 @@ export function TaskProgressPanel({ taskId, onClose }: TaskProgressPanelProps) {
   const locked = task.status === 'completed' || task.status === 'cancelled'
 
   return (
-    <RightDrawer
+    <WorkspaceSidePanel
       open={open}
       onClose={onClose}
       titleId="progress-panel-title"
+      ariaLabel="任务详情与进度"
       zClass="z-[60]"
       panelMaxWidthClass="max-w-2xl"
       backdropTestId="task-progress-backdrop"
@@ -180,6 +181,6 @@ export function TaskProgressPanel({ taskId, onClose }: TaskProgressPanelProps) {
           </div>
         </div>
       </div>
-    </RightDrawer>
+    </WorkspaceSidePanel>
   )
 }

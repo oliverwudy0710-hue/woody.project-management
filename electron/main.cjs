@@ -1,15 +1,80 @@
 const path = require('node:path')
 const { app, BrowserWindow, ipcMain } = require('electron')
-const { autoUpdater } = require('electron-updater')
 
 const DEV_URL = 'http://localhost:5175'
+const DEFAULT_SEND_TIME_LOCAL = '18:00'
 
 /** @type {BrowserWindow | null} */
 let mainWindow = null
+/** @type {NodeJS.Timeout | null} */
+let sendTimer = null
+let scheduleTimeLocal = DEFAULT_SEND_TIME_LOCAL
 
-function sendUpdaterStatus(payload) {
+function parseSendTimeLocal(raw) {
+  const m = String(raw ?? '')
+    .trim()
+    .match(/^(\d{1,2}):(\d{2})$/)
+  if (!m) return DEFAULT_SEND_TIME_LOCAL
+  const hh = Number(m[1])
+  const mm = Number(m[2])
+  if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return DEFAULT_SEND_TIME_LOCAL
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
+}
+
+function nextTriggerDelayMs(sendTimeLocal) {
+  const now = new Date()
+  const [h, m] = sendTimeLocal.split(':').map(Number)
+  const next = new Date(now)
+  next.setHours(h, m, 0, 0)
+  if (next.getTime() <= now.getTime()) {
+    next.setDate(next.getDate() + 1)
+  }
+  return Math.max(1000, next.getTime() - now.getTime())
+}
+
+function emitScheduledTrigger() {
   if (!mainWindow || mainWindow.isDestroyed()) return
-  mainWindow.webContents.send('desktop-updater:status', payload)
+  mainWindow.webContents.send('feishu:scheduled-trigger')
+}
+
+function scheduleDailyReportTick() {
+  if (sendTimer) {
+    clearTimeout(sendTimer)
+    sendTimer = null
+  }
+  const delay = nextTriggerDelayMs(scheduleTimeLocal)
+  sendTimer = setTimeout(() => {
+    emitScheduledTrigger()
+    scheduleDailyReportTick()
+  }, delay)
+}
+
+async function sendFeishuWebhookMessage(payload) {
+  const webhookUrl = String(payload?.webhookUrl ?? '').trim()
+  const text = String(payload?.text ?? '').trim()
+  if (!webhookUrl) {
+    return { ok: false, error: 'Webhook URL 为空' }
+  }
+  if (!text) {
+    return { ok: false, error: '日报内容为空' }
+  }
+  try {
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        msg_type: 'text',
+        content: { text },
+      }),
+    })
+    if (!res.ok) {
+      const errText = await res.text()
+      return { ok: false, error: errText || `HTTP ${res.status}` }
+    }
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) }
+  }
 }
 
 function createWindow() {
@@ -21,10 +86,10 @@ function createWindow() {
     show: false,
     title: 'Woody Task Manager',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
+      preload: path.join(__dirname, 'preload.cjs'),
     },
   })
 
@@ -42,86 +107,15 @@ function createWindow() {
   })
 }
 
-function wireAutoUpdater() {
-  autoUpdater.autoDownload = false
-  autoUpdater.autoInstallOnAppQuit = false
-
-  autoUpdater.on('checking-for-update', () => {
-    sendUpdaterStatus({ stage: 'checking' })
+app.whenReady().then(() => {
+  ipcMain.handle('feishu:update-schedule', async (_, args) => {
+    scheduleTimeLocal = parseSendTimeLocal(args?.sendTimeLocal)
+    scheduleDailyReportTick()
+    return { ok: true }
   })
-
-  autoUpdater.on('update-available', (info) => {
-    sendUpdaterStatus({
-      stage: 'available',
-      version: info.version,
-      releaseDate: info.releaseDate,
-    })
-  })
-
-  autoUpdater.on('update-not-available', () => {
-    sendUpdaterStatus({ stage: 'idle' })
-  })
-
-  autoUpdater.on('download-progress', (progress) => {
-    sendUpdaterStatus({
-      stage: 'downloading',
-      percent: progress.percent,
-      transferred: progress.transferred,
-      total: progress.total,
-      bytesPerSecond: progress.bytesPerSecond,
-    })
-  })
-
-  autoUpdater.on('update-downloaded', (info) => {
-    sendUpdaterStatus({
-      stage: 'ready',
-      version: info.version,
-    })
-  })
-
-  autoUpdater.on('error', (error) => {
-    sendUpdaterStatus({
-      stage: 'error',
-      message: error?.message ?? String(error),
-    })
-  })
-}
-
-ipcMain.handle('desktop-updater:get-version', () => app.getVersion())
-
-ipcMain.handle('desktop-updater:check', async () => {
-  if (!app.isPackaged) {
-    sendUpdaterStatus({
-      stage: 'error',
-      message: '开发模式不检查更新，请使用打包后的桌面应用验证自动更新。',
-    })
-    return { ok: false }
-  }
-  await autoUpdater.checkForUpdates()
-  return { ok: true }
-})
-
-ipcMain.handle('desktop-updater:download-and-install', async () => {
-  if (!app.isPackaged) {
-    return { ok: false, message: '开发模式不支持自动安装更新' }
-  }
-  await autoUpdater.downloadUpdate()
-  setTimeout(() => {
-    autoUpdater.quitAndInstall(false, true)
-  }, 300)
-  return { ok: true }
-})
-
-app.whenReady().then(async () => {
-  wireAutoUpdater()
+  ipcMain.handle('feishu:send-message', async (_, payload) => sendFeishuWebhookMessage(payload))
   createWindow()
-  if (app.isPackaged) {
-    try {
-      await autoUpdater.checkForUpdates()
-    } catch {
-      // errors are already emitted on `error` event
-    }
-  }
+  scheduleDailyReportTick()
 })
 
 app.on('window-all-closed', () => {
@@ -130,4 +124,11 @@ app.on('window-all-closed', () => {
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow()
+})
+
+app.on('before-quit', () => {
+  if (sendTimer) {
+    clearTimeout(sendTimer)
+    sendTimer = null
+  }
 })

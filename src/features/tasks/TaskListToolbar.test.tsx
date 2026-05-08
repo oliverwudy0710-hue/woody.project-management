@@ -16,7 +16,7 @@ function renderToolbar() {
       sortKey="default"
       onSortKeyChange={vi.fn()}
       subTagOptions={[]}
-      visibleCount={0}
+      matchedCount={0}
     />,
   )
 }

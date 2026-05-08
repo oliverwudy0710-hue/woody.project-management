@@ -4,7 +4,10 @@
 
 纯前端的个人任务管理系统，支持任务的增删改查、分类与优先级标记。
 数据通过 `localStorage` 持久化，无需后端。主要用于汇报工作进展与计划。
-**右下角 FAB**：**「+」** 新建任务、**对话图标** 打开助手侧栏；助手基于可配置 LLM（OpenAI 兼容接口，默认 DeepSeek），在输入框用 `@` 关联任务后再自然语言编辑等；实现见 `src/features/assistant/`、`assistantSettingsStore`、`AddTaskEntry.tsx`。
+**左侧主导航**（`AppSidebar`）：**新建任务**、**对话助手**（切换）、**个性化与模型（⚙）**；**主区域**为固定视口 **`h-[100dvh]`**：**任务列**（顶栏 + 筛选工具栏 + 分页 + `#task-list-scroll` 内滚动卡片栅格）与 **右侧工作面板**并列。右侧采用单槽互斥：**助手** / **新增任务** / **任务详情与进度**，宽屏固定列、窄屏抽屉。**顶栏**标题/角标/欢迎语/Logo 与 **每页条数** 在 `uiPreferencesStore`（`taskApp_ui_preferences`）。任务列表：先时间窗，再 **全局** 状态/领域/子标签/排序，再 **分页**（默认每页 24，可选 12/48/96）。LLM 连接信息在 `PersonalizationDrawer`；助手见 `AssistantDrawer`、`assistantSettingsStore`。  
+**飞书日报**：配置在 `PersonalizationDrawer`（`feishuReportStore` / `taskApp_feishu_report`）；主进程按 `sendTimeLocal` 触发 `IPC`，渲染进程调用模型生成「今日完成/明日计划/阻碍」，再由主进程 POST 飞书 Webhook（仅应用运行时触发）。  
+**助手能力说明**：UI 文案源 `assistantHelpSections.ts`（`AssistantHelpPanel`）；快捷能力见 `assistantPresets.ts`（批量创建 / 工作日志 / 今日要点）。**@ 提及**为 `@[标题]`（括号内标题中的 `]` 写作 `›`），解析 id 见 `parseLinkedTaskIdsFromText`；同名任务取 id 字典序最小的一条。
+**桌面版**：无应用内自动更新；主页顶栏展示 `VITE_APP_VERSION`（构建时自 `package.json` 注入）。新版请用户自行安装新 DMG。
 
 ## 时间与视图层级
 
@@ -84,6 +87,37 @@ git remote -v
 ---
 
 ## 经验教训
+
+### 2026-05-08 · @「仅标题」提及 + 批量创建列表 + 1.0.0 基线（v1.0.0）
+
+- **可复现要点**：`formatTaskMention(title)` → `@[escape(title)]`；`getActiveMentionPickerState` 区分筛选态与已闭合 token；`sortTasksForMentionPicker`（前缀匹配、状态序）；`mentionTokenBoundsForBackspace` / `mentionTokenBoundsForDelete` 原子删；`parseLinkedTaskIdsFromText(text, tasks)` 发送前按当前库解析 id。有序列表：`AssistantDrawer` 里对 `^\s*\d+\.\s` 行 **Enter** 插 `\n${n+1}. `，**Shift+Enter** 走默认换行。批量创建模板短版 + 系统提示强调「口语提炼、多条 create_task」；系统提示明确「多 @[标题] → 多条 update_task」。
+- **易错点**：标题含 `]` 必须经 `escapeForMentionTitle` 与解析同一规则；**同名任务**只会绑定 id 最小的一条，团队版前应产品层消歧或强制唯一标题。
+
+### 2026-05-08 · 助手帮助文档 + 快捷工作日志/今日要点/批量创建（v0.0.7）
+
+- **可复现要点**：`ASSISTANT_HELP_SECTIONS` 集中维护 UI 能力说明；`assistantPresets` 区分 `inject_input`（批量创建模板）与 `send_auto`（工作日志、今日要点：短 `displayUser` + 长 `userPrompt`）。`AssistantDrawer` 用 `ChatTurn` 的 `apiContent` 与 `toApiMessages` 保证多轮时 API 仍收到完整指令。`buildAssistantContextBlock` 注入列表时间窗、今日进展（含 `progressSnapshot`）、阻塞任务、窗内任务列表；`assistantSystemPrompt` 约定工作日志/今日要点返回 `message` + `operations: none`，批量创建可多条 `create_task`。执行层 `executeAssistantOperations` 本身已支持遍历多条 `create_task`。
+- **易错点**：勿把「气泡展示文案」当作 API 用户消息全文；一键类能力必须走 `apiContent`。改行为时同步改 `assistantHelpSections`、`assistantSystemPrompt`、`assistantPresets` 三处，避免文档与模型指令脱节。
+
+### 2026-05-08 · 右栏单槽统一 + 飞书日报定时（v0.0.6）
+
+- **可复现要点**：抽取 `WorkspaceSidePanel` 复用助手同款「宽屏固定列 / 窄屏抽屉」协议；`App` 通过 `rightPanel + taskDetailId` 管理右侧单槽互斥。飞书链路：`main.cjs` 维护 `sendTimeLocal` 定时器，触发 `feishu:scheduled-trigger`；渲染进程收到后执行 `sendDailyReport`，调用 `buildDailyReport`（复用 OpenAI 兼容客户端）生成文本，再由主进程 `fetch` Webhook 发送，成功后写回 `lastSentDate` 防重。
+- **易错点**：`contextIsolation: true` 时必须走 `preload + contextBridge` 暴露白名单 API，不能在渲染进程直接访问 `ipcRenderer`。另：飞书机器人 Webhook 与 API Key 都是本地敏感配置，文档要明确「勿入库」。
+
+### 2026-05-08 · 固定视口三栏 + 任务列表全局分页（v0.0.5）
+
+- **可复现要点**：根布局 `flex h-[100dvh] overflow-hidden`；任务列与助手列均 `min-h-0` + 子级 `flex-1 overflow-y-auto`。分页：**筛选/排序** 在全量 `filteredAll` 上完成，再 `slice`；切换时间窗或任一筛选项 **重置到第 1 页**；`tasksPerPage` **持久化**并写入 `setUiPreferences` 时用 `clampTaskPageSize`。**回到顶部** 应滚动 `#task-list-scroll`，勿依赖 `window.scrollTo`。
+- **易错点**：在 `flex` 子列里忘记 `min-h-0` 会导致内部 `overflow-y-auto` 不生效、列表仍把整页撑高。
+
+### 2026-05-08 · 左侧主导航 + 个性化抽屉（v0.0.4）
+
+- **可复现要点**：`App` 为 `AppSidebar | (主列 + AssistantDrawer 并列)`；`AddTaskModal` / `PersonalizationDrawer` 由 App 顶层持有 `open` 状态。`AppSidebar` 上 `data-testid` 保留 **`add-task-fab`**、**`assistant-fab`** 以兼容旧用例命名。`document.title` 同步 `appTitle`。
+- **易错点**：`RightDrawer` 已在包裹 `title` 的 **`<h2 id={titleId}>`** 上设置 `aria-labelledby`，**勿**在 `title` 子节点再写重复 `id`。助手内发送前若缺 API Key，错误文案需指向 **左侧 ⚙**，勿再引用已删除的「展开模型配置」。
+
+### 2026-05-08 · 移除 electron-updater + 首页版本号 + 文档中的发版顺序
+
+- **可复现要点（产品/发版）**：桌面版不再内置「检查 GitHub Releases → 下载 → 替换」：**无付费 Apple Developer 签名时**，Squirrel 链式更新常在签名校验处失败。用户改用 **手动安装新 DMG**；`README` 中写清 **先升 `package.json` 的 `version` 再打 `v*` tag**，避免 tag 与二进制版本不一致。
+- **可复现要点（实现）**：删除 `electron-updater`、`preload`、IPC、`DesktopUpdateBanner`；`BrowserWindow` 不再指定 `preload`。`vite.config.ts` 用 `define` 注入 `import.meta.env.VITE_APP_VERSION`；`package.json` 的 `build.publish` 已移除；`release-desktop` workflow 仅上传 `dist/*.dmg`、`dist/*.zip`。
+- **易错点**：只靠「合并 main」不会出现带正确版本号的安装包；**版本号仅由构建时的 `package.json` 决定**，与 git tag 名称无自动绑定。
 
 ### 2026-05-08 · 迁移安全线（防「有任务却写成空列表」）+ Electron 应用内更新
 

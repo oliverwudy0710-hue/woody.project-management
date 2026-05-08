@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { RightDrawer } from '../../components/RightDrawer'
+import { WorkspaceSidePanel } from '../../components/WorkspaceSidePanel'
 import { MarkdownEditorField } from '../../components/MarkdownEditorField'
 import { TaskAttachmentsField } from '../../components/TaskAttachmentsField'
 import { TaskCategoryFields } from '../../components/TaskCategoryFields'
@@ -48,11 +48,12 @@ export function AddTaskModal({ open, onClose }: AddTaskModalProps) {
   }, [open])
 
   return (
-    <RightDrawer
+    <WorkspaceSidePanel
       open={open}
       onClose={onClose}
       titleId="add-task-dialog-title"
       title="新增任务"
+      ariaLabel="新增任务"
       zClass="z-[60]"
       panelMaxWidthClass="max-w-2xl"
       backdropTestId="add-task-modal-backdrop"
@@ -161,6 +162,6 @@ export function AddTaskModal({ open, onClose }: AddTaskModalProps) {
           </button>
         </div>
       </form>
-    </RightDrawer>
+    </WorkspaceSidePanel>
   )
 }
