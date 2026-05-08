@@ -23,7 +23,7 @@ export default function App() {
         />
         <div className="relative flex flex-col gap-3 pl-4 sm:flex-row sm:items-start sm:gap-4 sm:pl-5">
           <img
-            src="/favicon.svg"
+            src={`${import.meta.env.BASE_URL}favicon.svg`}
             alt=""
             width={48}
             height={48}

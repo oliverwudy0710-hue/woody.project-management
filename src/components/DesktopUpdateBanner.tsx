@@ -4,6 +4,8 @@ import type { DesktopUpdaterStatus } from '../desktop-updater'
 export function DesktopUpdateBanner() {
   const [status, setStatus] = useState<DesktopUpdaterStatus>({ stage: 'idle' })
   const [dismissedVersion, setDismissedVersion] = useState<string | null>(null)
+  /** Only after user clicks 「立即更新」— startup check errors stay silent */
+  const [userStartedUpdate, setUserStartedUpdate] = useState(false)
   const updater = window.desktopUpdater
 
   useEffect(() => {
@@ -13,11 +15,24 @@ export function DesktopUpdateBanner() {
     return off
   }, [updater])
 
+  useEffect(() => {
+    if (status.stage === 'idle') {
+      setUserStartedUpdate(false)
+    }
+    if (status.stage === 'downloading' || status.stage === 'ready') {
+      setUserStartedUpdate(true)
+    }
+  }, [status.stage])
+
   const shouldShow = useMemo(() => {
     if (!updater) return false
-    if (status.stage === 'available') return dismissedVersion !== (status.version ?? null)
-    return status.stage === 'downloading' || status.stage === 'ready' || status.stage === 'error'
-  }, [dismissedVersion, status, updater])
+    if (status.stage === 'available') {
+      return dismissedVersion !== (status.version ?? null)
+    }
+    if (status.stage === 'downloading' || status.stage === 'ready') return true
+    if (status.stage === 'error') return userStartedUpdate
+    return false
+  }, [dismissedVersion, status, updater, userStartedUpdate])
 
   if (!shouldShow) return null
 
@@ -29,7 +44,10 @@ export function DesktopUpdateBanner() {
         <span>发现新版本{status.version ? ` v${status.version}` : ''}。</span>
         <button
           type="button"
-          onClick={() => void updater?.downloadAndInstall()}
+          onClick={() => {
+            setUserStartedUpdate(true)
+            void updater?.downloadAndInstall()
+          }}
           className="rounded-md bg-indigo-600 px-2.5 py-1 text-white hover:bg-indigo-700"
         >
           立即更新
@@ -60,7 +78,10 @@ export function DesktopUpdateBanner() {
         <span>自动更新失败：{status.message}</span>
         <button
           type="button"
-          onClick={() => void updater?.checkForUpdates()}
+          onClick={() => {
+            setUserStartedUpdate(true)
+            void updater?.checkForUpdates()
+          }}
           className="rounded-md border border-rose-300 px-2.5 py-1 text-rose-700 hover:bg-rose-50"
         >
           重试

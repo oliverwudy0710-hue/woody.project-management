@@ -9,7 +9,7 @@ import { postOpenAICompatibleChat } from './openaiCompatibleClient'
 import { useAssistantSettingsStore } from '../../stores/assistantSettingsStore'
 import { useTaskStore } from '../../stores/taskStore'
 import type { Task } from '../tasks/types'
-import { formatTaskMention, parseTaskIdsFromMentionText, stripMentionForTaskId } from './assistantMentionTokens'
+import { formatTaskMention, parseTaskIdsFromMentionText } from './assistantMentionTokens'
 
 export interface AssistantDrawerProps {
   open: boolean
@@ -42,8 +42,6 @@ export function AssistantDrawer({ open, onClose }: AssistantDrawerProps) {
     () => [...tasks].sort((a, b) => a.title.localeCompare(b.title, 'zh-CN')),
     [tasks],
   )
-
-  const linkedTaskIds = useMemo(() => parseTaskIdsFromMentionText(input), [input])
 
   const mentionCandidates = useMemo(() => {
     if (!activeMention) return []
@@ -92,10 +90,6 @@ export function AssistantDrawer({ open, onClose }: AssistantDrawerProps) {
     },
     [activeMention, input],
   )
-
-  const removeLinked = useCallback((id: string) => {
-    setInput((s) => stripMentionForTaskId(s, id))
-  }, [])
 
   const send = useCallback(async () => {
     const text = input.trim()
@@ -267,39 +261,6 @@ export function AssistantDrawer({ open, onClose }: AssistantDrawerProps) {
             </p>
           </div>
         )}
-
-        <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs">
-          <p className="font-medium text-slate-800">本轮已 @ 关联</p>
-          <p className="mt-1 text-[11px] text-slate-500">
-            仅这些任务允许被 update_task；在输入框中用 @ 搜索并插入，或点击下方 × 移除对应提及。
-          </p>
-          {linkedTaskIds.length > 0 ? (
-            <ul className="mt-2 flex flex-wrap gap-1.5">
-              {linkedTaskIds.map((id) => {
-                const t = tasks.find((x) => x.id === id)
-                if (!t) return null
-                return (
-                  <li
-                    key={id}
-                    className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-indigo-900"
-                  >
-                    <span className="max-w-[180px] truncate">{t.title}</span>
-                    <button
-                      type="button"
-                      className="text-indigo-700 hover:text-indigo-900"
-                      aria-label={`移除 ${t.title}`}
-                      onClick={() => removeLinked(id)}
-                    >
-                      ×
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          ) : (
-            <p className="mt-2 text-[11px] text-slate-400">尚未在输入框中插入 @ 任务</p>
-          )}
-        </div>
 
         <div
           ref={listRef}
