@@ -35,4 +35,5 @@ jobs:
           files: |
             dist/*.dmg
             dist/*.zip
+            dist/*.zip.blockmap
             dist/latest-mac.yml
