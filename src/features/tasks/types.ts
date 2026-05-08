@@ -1,5 +1,8 @@
 export type TaskPriority = 'high' | 'medium' | 'low'
 
+/** 任务领域：工作 / 生活 / 学习 */
+export type TaskDomain = 'work' | 'life' | 'study'
+
 export type TimeGranularity = 'day' | 'week' | 'month' | 'custom'
 
 export type TaskStatus = 'not_started' | 'in_progress' | 'blocked' | 'completed' | 'cancelled'
@@ -28,6 +31,8 @@ export interface Task {
   title: string
   description: string
   priority: TaskPriority
+  domain: TaskDomain
+  /** 子标签（自定义细类），可空 */
   category: string
   attachments: TaskAttachment[]
   /** ISO datetime when the task record was created */

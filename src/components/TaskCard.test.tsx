@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TaskCard } from './TaskCard'
 import type { Task } from '../features/tasks/types'
+import { emptyTagPresetsByDomain } from '../features/tasks/domainOptions'
 import { useTaskStore } from '../stores/taskStore'
 
 const baseTask: Task = {
@@ -9,6 +10,7 @@ const baseTask: Task = {
   title: '测试任务',
   description: '说明文字',
   priority: 'high',
+  domain: 'work',
   category: '开发',
   createdAt: '2025-06-01T00:00:00.000Z',
   implementationStart: '2025-06-10',
@@ -24,7 +26,7 @@ describe('TaskCard', () => {
     localStorage.clear()
     useTaskStore.setState({
       tasks: [],
-      tagPresets: [],
+      tagPresets: emptyTagPresetsByDomain(),
       timeGranularity: 'month',
       referenceDate: '2025-06-10',
       customWindowStart: '2025-06-01',
@@ -37,7 +39,7 @@ describe('TaskCard', () => {
     render(<TaskCard task={baseTask} onOpenProgress={onOpen} />)
     expect(screen.getByText('测试任务')).toBeInTheDocument()
     expect(screen.getByTestId('task-priority')).toHaveTextContent('高')
-    expect(screen.getByTestId('task-category')).toHaveTextContent('开发')
+    expect(screen.getByTestId('task-category')).toHaveTextContent('工作 · 开发')
     expect(screen.getByTestId('task-status')).toHaveTextContent('进行中')
     expect(screen.getByTestId('task-implementation')).toHaveTextContent('2025-06-10')
     expect(screen.getByTestId('task-implementation')).toHaveTextContent('2025-06-20')
@@ -60,10 +62,10 @@ describe('TaskCard', () => {
     expect(screen.getByText('测试任务')).toHaveClass('line-through')
   })
 
-  it('shows fallback when category is empty', () => {
+  it('shows domain label when sub-tag is empty', () => {
     const onOpen = vi.fn()
     render(<TaskCard task={{ ...baseTask, category: '' }} onOpenProgress={onOpen} />)
-    expect(screen.getByTestId('task-category')).toHaveTextContent('未分类')
+    expect(screen.getByTestId('task-category')).toHaveTextContent('工作')
   })
 
   it('opens progress panel when clicking the card body but not when clicking delete', () => {
@@ -80,7 +82,7 @@ describe('TaskCard', () => {
     const onOpen = vi.fn()
     useTaskStore.setState({
       tasks: [baseTask],
-      tagPresets: [],
+      tagPresets: emptyTagPresetsByDomain(),
       timeGranularity: 'month',
       referenceDate: '2025-06-10',
       customWindowStart: '2025-06-01',
@@ -97,7 +99,7 @@ describe('TaskCard', () => {
     const onOpen = vi.fn()
     useTaskStore.setState({
       tasks: [baseTask],
-      tagPresets: [],
+      tagPresets: emptyTagPresetsByDomain(),
       timeGranularity: 'month',
       referenceDate: '2025-06-10',
       customWindowStart: '2025-06-01',

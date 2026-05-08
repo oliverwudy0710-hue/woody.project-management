@@ -81,18 +81,39 @@ export function TaskProgressPanel({ taskId, onClose }: TaskProgressPanelProps) {
           </select>
 
           <label htmlFor="progress-percent" className="mt-3 block text-sm font-medium text-slate-700">
-            完成百分比（0–100），达到 100% 将自动标记为已完成
+            完成进度（0–100%，步进 1%）。拖到 100% 时会询问是否标记为已完成；完成后可在「状态」中改回进行中或阻塞。
           </label>
-          <input
-            id="progress-percent"
-            type="number"
-            min={0}
-            max={100}
-            disabled={locked}
-            value={task.progressPercent}
-            onChange={(e) => updateTask(task.id, { progressPercent: Number(e.target.value) })}
-            className={field}
-          />
+          <datalist id={`progress-ticks-${task.id}`}>
+            <option value="50" />
+          </datalist>
+          <div className="mt-2 flex items-center gap-3">
+            <input
+              id="progress-percent"
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              list={`progress-ticks-${task.id}`}
+              disabled={locked}
+              value={task.progressPercent}
+              onChange={(e) => {
+                const v = Number(e.target.value)
+                if (locked) return
+                if (v < 100) {
+                  updateTask(task.id, { progressPercent: v })
+                  return
+                }
+                const ok = window.confirm(
+                  '将进度设为 100% 并标记为「已完成」，确定吗？',
+                )
+                if (ok) {
+                  updateTask(task.id, { progressPercent: 100, status: 'completed' })
+                }
+              }}
+              className="h-2 w-full flex-1 cursor-pointer accent-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+            <span className="w-10 shrink-0 tabular-nums text-sm text-slate-700">{task.progressPercent}%</span>
+          </div>
 
           <div className="mt-4 border-t border-slate-200 pt-4">
             <h3 className="text-sm font-semibold text-slate-800">追加每日进展</h3>

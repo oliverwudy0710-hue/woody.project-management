@@ -1,9 +1,4 @@
-import type { TaskAttachment, TaskPriority } from '../features/tasks/types'
-import type { CategorySelectValue } from '../features/tasks/categoryOptions'
-import {
-  TASK_CATEGORY_CUSTOM,
-  TASK_CATEGORY_SELECT_EMPTY,
-} from '../features/tasks/categoryOptions'
+import type { TaskAttachment, TaskDomain, TaskPriority } from '../features/tasks/types'
 import { useTaskStore } from '../stores/taskStore'
 import { todayISODate } from '../utils/dateFilter'
 import { useCallback, useEffect, useState } from 'react'
@@ -21,10 +16,8 @@ export function useAddTaskForm({ open, onSuccess }: UseAddTaskFormOptions) {
   const [priority, setPriority] = useState<TaskPriority>('medium')
   const [implementationStart, setImplementationStart] = useState(() => todayISODate())
   const [implementationEnd, setImplementationEnd] = useState(() => todayISODate())
-  const [categorySelect, setCategorySelect] = useState<CategorySelectValue>(
-    TASK_CATEGORY_SELECT_EMPTY,
-  )
-  const [categoryCustom, setCategoryCustom] = useState('')
+  const [domain, setDomain] = useState<TaskDomain>('work')
+  const [subTag, setSubTag] = useState('')
   const [titleError, setTitleError] = useState<string | null>(null)
   const [periodError, setPeriodError] = useState<string | null>(null)
   const [attachments, setAttachments] = useState<TaskAttachment[]>([])
@@ -42,17 +35,12 @@ export function useAddTaskForm({ open, onSuccess }: UseAddTaskFormOptions) {
     setPriority('medium')
     setImplementationStart(d)
     setImplementationEnd(d)
-    setCategorySelect(TASK_CATEGORY_SELECT_EMPTY)
-    setCategoryCustom('')
+    setDomain('work')
+    setSubTag('')
     setTitleError(null)
     setPeriodError(null)
     setAttachments([])
   }, [open])
-
-  const resolveCategory = useCallback((): string => {
-    if (categorySelect === TASK_CATEGORY_CUSTOM) return categoryCustom.trim()
-    return categorySelect
-  }, [categoryCustom, categorySelect])
 
   const submit = useCallback(() => {
     const trimmedTitle = title.trim()
@@ -70,7 +58,8 @@ export function useAddTaskForm({ open, onSuccess }: UseAddTaskFormOptions) {
       title: trimmedTitle,
       description: description.trim(),
       priority,
-      category: resolveCategory(),
+      domain,
+      category: subTag.trim(),
       implementationStart,
       implementationEnd,
       progressPercent: 0,
@@ -83,11 +72,12 @@ export function useAddTaskForm({ open, onSuccess }: UseAddTaskFormOptions) {
   }, [
     addTask,
     description,
+    domain,
     implementationEnd,
     implementationStart,
     onSuccess,
     priority,
-    resolveCategory,
+    subTag,
     title,
     attachments,
   ])
@@ -103,10 +93,10 @@ export function useAddTaskForm({ open, onSuccess }: UseAddTaskFormOptions) {
     setImplementationStart,
     implementationEnd,
     setImplementationEnd,
-    categorySelect,
-    setCategorySelect,
-    categoryCustom,
-    setCategoryCustom,
+    domain,
+    setDomain,
+    subTag,
+    setSubTag,
     titleError,
     periodError,
     submit,

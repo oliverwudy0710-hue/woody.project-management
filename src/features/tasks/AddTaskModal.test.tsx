@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AddTaskModal } from './AddTaskModal'
+import { emptyTagPresetsByDomain } from './domainOptions'
 import { useTaskStore } from '../../stores/taskStore'
 import { todayISODate } from '../../utils/dateFilter'
 
@@ -9,7 +10,7 @@ describe('AddTaskModal', () => {
     localStorage.clear()
     useTaskStore.setState({
       tasks: [],
-      tagPresets: [],
+      tagPresets: emptyTagPresetsByDomain(),
       timeGranularity: 'month',
       referenceDate: '2025-06-10',
       customWindowStart: '2025-06-01',
@@ -29,6 +30,7 @@ describe('AddTaskModal', () => {
     const tasks = useTaskStore.getState().tasks
     expect(tasks).toHaveLength(1)
     expect(tasks[0].title).toBe('写月报')
+    expect(tasks[0].domain).toBe('work')
     expect(tasks[0].status).toBe('not_started')
     expect(tasks[0].progressPercent).toBe(0)
     expect(tasks[0].implementationStart).toBe(todayISODate())

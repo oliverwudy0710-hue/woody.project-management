@@ -1,8 +1,10 @@
-import type { Task, TaskPriority, TaskStatus } from '../features/tasks/types'
+import type { Task, TaskDomain, TaskPriority, TaskStatus } from '../features/tasks/types'
 
 export type TaskSortKey = 'default' | 'priority' | 'status' | 'progress'
 
 export type TaskStatusFilter = 'all' | TaskStatus
+
+export type TaskDomainFilter = 'all' | TaskDomain
 
 const priorityOrder: Record<TaskPriority, number> = { high: 0, medium: 1, low: 2 }
 
@@ -44,4 +46,9 @@ export function filterTasksByTag(tasks: Task[], tag: string): Task[] {
   const q = tag.trim()
   if (!q) return tasks
   return tasks.filter((t) => t.category.trim() === q)
+}
+
+export function filterTasksByDomain(tasks: Task[], filter: TaskDomainFilter): Task[] {
+  if (filter === 'all') return tasks
+  return tasks.filter((t) => t.domain === filter)
 }

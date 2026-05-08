@@ -1,4 +1,5 @@
-import type { ProgressLogEntry, Task, TaskAttachment, TaskStatus } from '../features/tasks/types'
+import type { ProgressLogEntry, Task, TaskAttachment, TaskStatus, TaskDomain } from '../features/tasks/types'
+import { isTaskDomain, splitCategoryLegacy } from '../features/tasks/domainOptions'
 import { todayISODate } from './dateFilter'
 
 /** Normalize persisted task: legacy `scheduledDate` / `completed` → new model. */
@@ -13,6 +14,8 @@ export function migrateTask(raw: unknown): Task {
   const sd = typeof r.scheduledDate === 'string' ? r.scheduledDate : todayISODate()
   const completed = Boolean(r.completed)
   const status: TaskStatus = completed ? 'completed' : 'not_started'
+  const catRaw = typeof r.category === 'string' ? r.category : ''
+  const { domain, category } = splitCategoryLegacy(catRaw)
   return sanitizeExisting({
     id:
       String(r.id ?? '').trim() ||
@@ -20,7 +23,8 @@ export function migrateTask(raw: unknown): Task {
     title: String(r.title ?? ''),
     description: typeof r.description === 'string' ? r.description : '',
     priority: r.priority === 'high' || r.priority === 'low' || r.priority === 'medium' ? r.priority : 'medium',
-    category: typeof r.category === 'string' ? r.category : '',
+    domain,
+    category,
     createdAt: typeof r.createdAt === 'string' ? r.createdAt : new Date().toISOString(),
     implementationStart: sd,
     implementationEnd: sd,
@@ -38,6 +42,7 @@ function emptyFallbackTask(): Task {
     title: '',
     description: '',
     priority: 'medium',
+    domain: 'work',
     category: '',
     createdAt: new Date().toISOString(),
     implementationStart: d,
@@ -84,9 +89,25 @@ function sanitizeExisting(t: Task): Task {
         .map(sanitizeAttachment)
         .filter((a): a is TaskAttachment => a !== null)
     : []
+
+  const r = t as unknown as Record<string, unknown>
+  const hadExplicitDomain = isTaskDomain(r.domain)
+  let domain: TaskDomain
+  let category = String(t.category ?? '').trim()
+
+  if (hadExplicitDomain) {
+    domain = r.domain as TaskDomain
+  } else {
+    const m = splitCategoryLegacy(category)
+    domain = m.domain
+    category = m.category
+  }
+
   return {
     ...t,
     id,
+    domain,
+    category,
     status,
     progressPercent,
     attachments,

@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { Task } from './types'
+import { emptyTagPresetsByDomain } from './domainOptions'
 import { TaskList } from './TaskList'
 import { useTaskStore } from '../../stores/taskStore'
 
@@ -11,6 +12,7 @@ function makeTask(
     ...base,
     description: '',
     priority: 'low',
+    domain: 'work',
     category: 'A',
     createdAt: '2025-06-10T00:00:00.000Z',
     progressPercent: 0,
@@ -29,7 +31,7 @@ describe('TaskList', () => {
         makeTask({ id: 'b', title: '仅在五月', implementationStart: '2025-05-01', implementationEnd: '2025-05-31' }),
         makeTask({ id: 'c', title: '跨月', implementationStart: '2025-05-28', implementationEnd: '2025-06-05' }),
       ],
-      tagPresets: [],
+      tagPresets: emptyTagPresetsByDomain(),
       timeGranularity: 'month',
       referenceDate: '2025-06-10',
       customWindowStart: '2025-06-01',

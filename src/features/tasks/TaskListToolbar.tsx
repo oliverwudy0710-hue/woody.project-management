@@ -1,9 +1,11 @@
 import type { TaskStatus, TimeGranularity } from './types'
+import { TASK_DOMAIN_LABELS, TASK_DOMAINS } from './domainOptions'
+import type { TaskDomain } from './types'
 import { describeImplementationWindow } from '../../utils/implementationWindow'
 import { todayISODate } from '../../utils/dateFilter'
 import { useTaskStore } from '../../stores/taskStore'
 import { taskStatusLabel } from '../../utils/taskStatusLabels'
-import type { TaskSortKey, TaskStatusFilter } from '../../utils/taskSortFilter'
+import type { TaskSortKey, TaskStatusFilter, TaskDomainFilter } from '../../utils/taskSortFilter'
 
 const granularityLabels: Record<TimeGranularity, string> = {
   month: '本月',
@@ -18,22 +20,26 @@ const selectCls =
 export interface TaskListToolbarProps {
   statusFilter: TaskStatusFilter
   onStatusFilterChange: (v: TaskStatusFilter) => void
+  domainFilter: TaskDomainFilter
+  onDomainFilterChange: (v: TaskDomainFilter) => void
   tagFilter: string
   onTagFilterChange: (v: string) => void
   sortKey: TaskSortKey
   onSortKeyChange: (v: TaskSortKey) => void
-  tagOptions: string[]
+  subTagOptions: string[]
   visibleCount: number
 }
 
 export function TaskListToolbar({
   statusFilter,
   onStatusFilterChange,
+  domainFilter,
+  onDomainFilterChange,
   tagFilter,
   onTagFilterChange,
   sortKey,
   onSortKeyChange,
-  tagOptions,
+  subTagOptions,
   visibleCount,
 }: TaskListToolbarProps) {
   const timeGranularity = useTaskStore((s) => s.timeGranularity)
@@ -171,15 +177,32 @@ export function TaskListToolbar({
                 </select>
               </label>
               <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-                标签
+                领域
+                <select
+                  value={domainFilter}
+                  onChange={(e) => onDomainFilterChange(e.target.value as TaskDomainFilter)}
+                  className={selectCls}
+                  aria-label="按领域筛选"
+                >
+                  <option value="all">全部领域</option>
+                  {TASK_DOMAINS.map((d: TaskDomain) => (
+                    <option key={d} value={d}>
+                      {TASK_DOMAIN_LABELS[d]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+                子标签
                 <select
                   value={tagFilter}
                   onChange={(e) => onTagFilterChange(e.target.value)}
                   className={selectCls}
-                  aria-label="按标签筛选"
+                  aria-label="按子标签筛选"
+                  disabled={domainFilter === 'all'}
                 >
-                  <option value="">全部标签</option>
-                  {tagOptions.map((t) => (
+                  <option value="">全部子标签</option>
+                  {subTagOptions.map((t) => (
                     <option key={t} value={t}>
                       {t}
                     </option>

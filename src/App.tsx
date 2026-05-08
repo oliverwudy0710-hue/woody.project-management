@@ -1,11 +1,14 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { AddTaskEntry } from './features/tasks/AddTaskEntry'
 import { TaskList } from './features/tasks/TaskList'
+import { AssistantDrawer } from './features/assistant/AssistantDrawer'
 import { useTaskStore } from './stores/taskStore'
 import { todayISODate } from './utils/dateFilter'
+import { DesktopUpdateBanner } from './components/DesktopUpdateBanner'
 
 export default function App() {
   const setReferenceDate = useTaskStore((s) => s.setReferenceDate)
+  const [assistantOpen, setAssistantOpen] = useState(false)
 
   useEffect(() => {
     setReferenceDate(todayISODate())
@@ -40,10 +43,12 @@ export default function App() {
       </header>
 
       <main className="relative min-h-[40vh] flex-1">
+        <DesktopUpdateBanner />
         <TaskList />
       </main>
 
-      <AddTaskEntry />
+      <AddTaskEntry onOpenAssistant={() => setAssistantOpen(true)} />
+      <AssistantDrawer open={assistantOpen} onClose={() => setAssistantOpen(false)} />
     </div>
   )
 }

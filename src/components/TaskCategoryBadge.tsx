@@ -1,10 +1,12 @@
-type CategoryTone = 'work' | 'personal' | 'study' | 'other'
+import type { TaskDomain } from '../features/tasks/types'
+import { TASK_DOMAIN_LABELS } from '../features/tasks/domainOptions'
 
-function detectTone(category: string): CategoryTone {
-  const c = category.trim()
-  if (c === '工作') return 'work'
-  if (c === '个人') return 'personal'
-  if (c === '学习') return 'study'
+type BadgeTone = 'work' | 'life' | 'study' | 'other'
+
+function domainToTone(domain: TaskDomain): BadgeTone {
+  if (domain === 'work') return 'work'
+  if (domain === 'life') return 'life'
+  if (domain === 'study') return 'study'
   return 'other'
 }
 
@@ -17,7 +19,7 @@ function IconWork({ className }: { className?: string }) {
   )
 }
 
-function IconPersonal({ className }: { className?: string }) {
+function IconLife({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -44,17 +46,14 @@ function IconTag({ className }: { className?: string }) {
   )
 }
 
-const toneConfig: Record<
-  CategoryTone,
-  { Icon: typeof IconWork; pill: string; iconWrap: string }
-> = {
+const toneConfig: Record<BadgeTone, { Icon: typeof IconWork; pill: string; iconWrap: string }> = {
   work: {
     Icon: IconWork,
     pill: 'bg-sky-50 text-sky-900 ring-sky-200',
     iconWrap: 'text-sky-600',
   },
-  personal: {
-    Icon: IconPersonal,
+  life: {
+    Icon: IconLife,
     pill: 'bg-violet-50 text-violet-900 ring-violet-200',
     iconWrap: 'text-violet-600',
   },
@@ -71,12 +70,15 @@ const toneConfig: Record<
 }
 
 export interface TaskCategoryBadgeProps {
+  domain: TaskDomain
   category: string
 }
 
-export function TaskCategoryBadge({ category }: TaskCategoryBadgeProps) {
-  const label = category.trim() || '未分类'
-  const tone = detectTone(category.trim() || '')
+export function TaskCategoryBadge({ domain, category }: TaskCategoryBadgeProps) {
+  const sub = category.trim()
+  const base = TASK_DOMAIN_LABELS[domain]
+  const label = sub ? `${base} · ${sub}` : base
+  const tone = domainToTone(domain)
   const cfg = toneConfig[tone]
   const { Icon } = cfg
   return (
