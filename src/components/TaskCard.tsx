@@ -124,7 +124,7 @@ export function TaskCard({ task, onOpenProgress, className = '' }: TaskCardProps
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-            <TaskCategoryBadge category={task.category} />
+            <TaskCategoryBadge domain={task.domain} category={task.category} />
             <span data-testid="task-implementation">
               实施：{task.implementationStart} ~ {task.implementationEnd}
             </span>

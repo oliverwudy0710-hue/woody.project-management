@@ -1,17 +1,18 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { filterTasksByImplementationWindow } from '../../utils/implementationWindow'
 import {
   filterTasksByStatus,
   filterTasksByTag,
+  filterTasksByDomain,
   sortTasks,
   type TaskSortKey,
   type TaskStatusFilter,
+  type TaskDomainFilter,
 } from '../../utils/taskSortFilter'
 import { useTaskStore } from '../../stores/taskStore'
 import { TaskCard } from '../../components/TaskCard'
 import { TaskProgressPanel } from './TaskProgressPanel'
 import { TaskListToolbar } from './TaskListToolbar'
-import { TASK_CATEGORY_BUILTIN } from './categoryOptions'
 
 export function TaskList() {
   const tasks = useTaskStore((s) => s.tasks)
@@ -23,8 +24,13 @@ export function TaskList() {
 
   const [progressTaskId, setProgressTaskId] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<TaskStatusFilter>('all')
+  const [domainFilter, setDomainFilter] = useState<TaskDomainFilter>('all')
   const [tagFilter, setTagFilter] = useState('')
   const [sortKey, setSortKey] = useState<TaskSortKey>('default')
+
+  useEffect(() => {
+    if (domainFilter === 'all') setTagFilter('')
+  }, [domainFilter])
 
   const customWindow = useMemo(
     () => (timeGranularity === 'custom' ? { start: customWindowStart, end: customWindowEnd } : null),
@@ -36,21 +42,24 @@ export function TaskList() {
     [tasks, timeGranularity, referenceDate, customWindow],
   )
 
-  const tagOptions = useMemo(() => {
-    const set = new Set<string>([...TASK_CATEGORY_BUILTIN, ...tagPresets])
+  const subTagOptions = useMemo(() => {
+    if (domainFilter === 'all') return []
+    const set = new Set<string>([...tagPresets[domainFilter]])
     for (const t of tasks) {
+      if (t.domain !== domainFilter) continue
       const c = t.category.trim()
       if (c) set.add(c)
     }
     return [...set].sort((a, b) => a.localeCompare(b, 'zh-CN'))
-  }, [tasks, tagPresets])
+  }, [tasks, tagPresets, domainFilter])
 
   const visible = useMemo(() => {
     let list = filterTasksByStatus(inWindow, statusFilter)
+    list = filterTasksByDomain(list, domainFilter)
     list = filterTasksByTag(list, tagFilter)
     list = sortTasks(list, sortKey)
     return list
-  }, [inWindow, statusFilter, tagFilter, sortKey])
+  }, [inWindow, statusFilter, domainFilter, tagFilter, sortKey])
 
   if (inWindow.length === 0) {
     return (
@@ -58,11 +67,13 @@ export function TaskList() {
         <TaskListToolbar
           statusFilter={statusFilter}
           onStatusFilterChange={setStatusFilter}
+          domainFilter={domainFilter}
+          onDomainFilterChange={setDomainFilter}
           tagFilter={tagFilter}
           onTagFilterChange={setTagFilter}
           sortKey={sortKey}
           onSortKeyChange={setSortKey}
-          tagOptions={tagOptions}
+          subTagOptions={subTagOptions}
           visibleCount={0}
         />
         <p className="rounded-2xl border border-dashed border-slate-300/80 bg-white/70 px-4 py-10 text-center text-sm text-slate-600 shadow-sm">
@@ -77,16 +88,18 @@ export function TaskList() {
       <TaskListToolbar
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
+        domainFilter={domainFilter}
+        onDomainFilterChange={setDomainFilter}
         tagFilter={tagFilter}
         onTagFilterChange={setTagFilter}
         sortKey={sortKey}
         onSortKeyChange={setSortKey}
-        tagOptions={tagOptions}
+        subTagOptions={subTagOptions}
         visibleCount={visible.length}
       />
       {visible.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-amber-200/90 bg-amber-50/90 px-4 py-8 text-center text-sm text-amber-950 shadow-sm">
-          当前筛选项下没有任务，请尝试调整状态、标签或排序。
+          当前筛选项下没有任务，请尝试调整状态、领域、子标签或排序。
         </p>
       ) : (
         <ul

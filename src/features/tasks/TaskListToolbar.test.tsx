@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TaskListToolbar } from './TaskListToolbar'
+import { emptyTagPresetsByDomain } from './domainOptions'
 import { useTaskStore } from '../../stores/taskStore'
 
 function renderToolbar() {
@@ -8,11 +9,13 @@ function renderToolbar() {
     <TaskListToolbar
       statusFilter="all"
       onStatusFilterChange={vi.fn()}
+      domainFilter="all"
+      onDomainFilterChange={vi.fn()}
       tagFilter=""
       onTagFilterChange={vi.fn()}
       sortKey="default"
       onSortKeyChange={vi.fn()}
-      tagOptions={[]}
+      subTagOptions={[]}
       visibleCount={0}
     />,
   )
@@ -23,7 +26,7 @@ describe('TaskListToolbar', () => {
     localStorage.clear()
     useTaskStore.setState({
       tasks: [],
-      tagPresets: [],
+      tagPresets: emptyTagPresetsByDomain(),
       timeGranularity: 'month',
       referenceDate: '2025-06-01',
       customWindowStart: '2025-06-01',

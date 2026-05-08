@@ -1,35 +1,36 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { TASK_CATEGORY_CUSTOM, TASK_CATEGORY_SELECT_EMPTY } from '../features/tasks/categoryOptions'
 import { TaskCategoryFields } from './TaskCategoryFields'
 
 describe('TaskCategoryFields', () => {
-  it('shows custom text field when 自定义 is selected', () => {
-    const onSelect = vi.fn()
-    const onCustom = vi.fn()
-    const { rerender } = render(
+  it('calls onSubTagChange when sub-tag input changes', () => {
+    const onDomain = vi.fn()
+    const onSub = vi.fn()
+    render(
       <TaskCategoryFields
-        categorySelect={TASK_CATEGORY_SELECT_EMPTY}
-        onCategorySelectChange={onSelect}
-        categoryCustom=""
-        onCategoryCustomChange={onCustom}
+        domain="work"
+        onDomainChange={onDomain}
+        subTag=""
+        onSubTagChange={onSub}
+        savedSubTags={['前端']}
       />,
     )
-    expect(screen.queryByTestId('task-category-custom')).not.toBeInTheDocument()
+    fireEvent.change(screen.getByTestId('task-subtag-input'), { target: { value: '副业' } })
+    expect(onSub).toHaveBeenCalledWith('副业')
+  })
 
-    rerender(
+  it('calls onDomainChange when domain select changes', () => {
+    const onDomain = vi.fn()
+    render(
       <TaskCategoryFields
-        categorySelect={TASK_CATEGORY_CUSTOM}
-        onCategorySelectChange={onSelect}
-        categoryCustom=""
-        onCategoryCustomChange={onCustom}
+        domain="work"
+        onDomainChange={onDomain}
+        subTag=""
+        onSubTagChange={vi.fn()}
+        savedSubTags={[]}
       />,
     )
-    expect(screen.getByTestId('task-category-custom')).toBeInTheDocument()
-
-    fireEvent.change(screen.getByTestId('task-category-custom'), {
-      target: { value: '副业' },
-    })
-    expect(onCustom).toHaveBeenCalledWith('副业')
+    fireEvent.change(screen.getByLabelText(/领域/), { target: { value: 'study' } })
+    expect(onDomain).toHaveBeenCalledWith('study')
   })
 })

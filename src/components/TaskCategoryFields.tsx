@@ -1,78 +1,65 @@
-import type { CategorySelectValue } from '../features/tasks/categoryOptions'
-import {
-  TASK_CATEGORY_BUILTIN,
-  TASK_CATEGORY_CUSTOM,
-  TASK_CATEGORY_SELECT_EMPTY,
-} from '../features/tasks/categoryOptions'
+import type { TaskDomain } from '../features/tasks/types'
+import { TASK_DOMAINS, TASK_DOMAIN_LABELS } from '../features/tasks/domainOptions'
 
 const inputClass =
   'w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200'
 
 export interface TaskCategoryFieldsProps {
-  categorySelect: CategorySelectValue
-  onCategorySelectChange: (value: CategorySelectValue) => void
-  categoryCustom: string
-  onCategoryCustomChange: (value: string) => void
-  /** 曾用过的自定义标签，可在下拉里复选 */
-  savedTags?: string[]
+  domain: TaskDomain
+  onDomainChange: (value: TaskDomain) => void
+  subTag: string
+  onSubTagChange: (value: string) => void
+  savedSubTags: string[]
 }
 
 export function TaskCategoryFields({
-  categorySelect,
-  onCategorySelectChange,
-  categoryCustom,
-  onCategoryCustomChange,
-  savedTags = [],
+  domain,
+  onDomainChange,
+  subTag,
+  onSubTagChange,
+  savedSubTags,
 }: TaskCategoryFieldsProps) {
-  const builtinSet = new Set<string>(TASK_CATEGORY_BUILTIN)
-  const extraSaved = savedTags.filter((t) => {
-    const x = t.trim()
-    return x && !builtinSet.has(x)
-  })
-  const datalistId = 'task-saved-tags-datalist'
+  const datalistId = 'task-saved-subtags-datalist'
 
   return (
-    <div>
-      <label htmlFor="task-category-select" className="mb-1 block text-sm font-medium text-slate-700">
-        分类标签
-      </label>
-      <select
-        id="task-category-select"
-        value={categorySelect}
-        onChange={(e) => onCategorySelectChange(e.target.value as CategorySelectValue)}
-        className={inputClass}
-      >
-        <option value={TASK_CATEGORY_SELECT_EMPTY}>（不选）</option>
-        {TASK_CATEGORY_BUILTIN.map((v) => (
-          <option key={v} value={v}>
-            {v}
-          </option>
-        ))}
-        {extraSaved.map((v) => (
-          <option key={v} value={v}>
-            {v}
-          </option>
-        ))}
-        <option value={TASK_CATEGORY_CUSTOM}>自定义…</option>
-      </select>
-      {categorySelect === TASK_CATEGORY_CUSTOM ? (
-        <>
-          <input
-            type="text"
-            list={datalistId}
-            placeholder="输入自定义标签（可复用于后续任务）"
-            value={categoryCustom}
-            onChange={(e) => onCategoryCustomChange(e.target.value)}
-            className={`mt-2 ${inputClass}`}
-            data-testid="task-category-custom"
-          />
-          <datalist id={datalistId}>
-            {extraSaved.map((v) => (
-              <option key={`dl-${v}`} value={v} />
-            ))}
-          </datalist>
-        </>
-      ) : null}
+    <div className="space-y-3">
+      <div>
+        <label htmlFor="task-domain-select" className="mb-1 block text-sm font-medium text-slate-700">
+          领域
+        </label>
+        <select
+          id="task-domain-select"
+          value={domain}
+          onChange={(e) => onDomainChange(e.target.value as TaskDomain)}
+          className={inputClass}
+        >
+          {TASK_DOMAINS.map((d) => (
+            <option key={d} value={d}>
+              {TASK_DOMAIN_LABELS[d]}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label htmlFor="task-subtag-input" className="mb-1 block text-sm font-medium text-slate-700">
+          子标签（可选）
+        </label>
+        <input
+          id="task-subtag-input"
+          type="text"
+          list={datalistId}
+          placeholder="例如：前端、健身、英语…"
+          value={subTag}
+          onChange={(e) => onSubTagChange(e.target.value)}
+          className={inputClass}
+          data-testid="task-subtag-input"
+        />
+        <datalist id={datalistId}>
+          {savedSubTags.map((v) => (
+            <option key={v} value={v} />
+          ))}
+        </datalist>
+      </div>
     </div>
   )
 }

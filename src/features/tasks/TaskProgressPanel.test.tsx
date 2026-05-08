@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TaskProgressPanel } from './TaskProgressPanel'
 import type { Task } from './types'
+import { emptyTagPresetsByDomain } from './domainOptions'
 import { useTaskStore } from '../../stores/taskStore'
 
 function seedTask(over: Partial<Task> & Pick<Task, 'id'>): Task {
@@ -9,6 +10,7 @@ function seedTask(over: Partial<Task> & Pick<Task, 'id'>): Task {
     title: 'T',
     description: '',
     priority: 'medium',
+    domain: 'work',
     category: '',
     createdAt: '2025-01-01T00:00:00.000Z',
     implementationStart: '2025-06-01',
@@ -26,7 +28,7 @@ describe('TaskProgressPanel', () => {
     localStorage.clear()
     useTaskStore.setState({
       tasks: [seedTask({ id: 'x', title: '进度任务' })],
-      tagPresets: [],
+      tagPresets: emptyTagPresetsByDomain(),
       timeGranularity: 'month',
       referenceDate: '2025-06-10',
       customWindowStart: '2025-06-01',
@@ -44,12 +46,52 @@ describe('TaskProgressPanel', () => {
     expect(t.progressPercent).toBe(100)
   })
 
-  it('marks task completed when progress percent reaches 100', () => {
+  it('marks task completed when slider reaches 100 and user confirms', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
     render(<TaskProgressPanel taskId="x" onClose={() => {}} />)
-    fireEvent.change(screen.getByLabelText(/完成百分比/), { target: { value: '100' } })
+    fireEvent.change(screen.getByRole('slider', { name: /完成进度/ }), {
+      target: { value: '100' },
+    })
     const t = useTaskStore.getState().tasks[0]
+    expect(confirmSpy).toHaveBeenCalled()
     expect(t.progressPercent).toBe(100)
     expect(t.status).toBe('completed')
+    confirmSpy.mockRestore()
+  })
+
+  it('does not complete task when slider reaches 100 but user cancels confirm', () => {
+    useTaskStore.setState({
+      tasks: [seedTask({ id: 'x', title: '进度任务', progressPercent: 99 })],
+    })
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(<TaskProgressPanel taskId="x" onClose={() => {}} />)
+    fireEvent.change(screen.getByRole('slider', { name: /完成进度/ }), {
+      target: { value: '100' },
+    })
+    const t = useTaskStore.getState().tasks[0]
+    expect(t.progressPercent).toBe(99)
+    expect(t.status).toBe('in_progress')
+    confirmSpy.mockRestore()
+  })
+
+  it('allows reverting status from completed to blocked', () => {
+    useTaskStore.setState({
+      tasks: [
+        seedTask({
+          id: 'x',
+          title: 'Done',
+          status: 'completed',
+          progressPercent: 100,
+        }),
+      ],
+    })
+    render(<TaskProgressPanel taskId="x" onClose={() => {}} />)
+    fireEvent.change(screen.getByRole('combobox', { name: '状态' }), {
+      target: { value: 'blocked' },
+    })
+    const t = useTaskStore.getState().tasks[0]
+    expect(t.status).toBe('blocked')
+    expect(t.progressPercent).toBe(100)
   })
 
   it('appends progress log when note is non-empty', () => {
@@ -75,7 +117,7 @@ describe('TaskProgressPanel', () => {
   it('does not show append form when task is completed', () => {
     useTaskStore.setState({
       tasks: [seedTask({ id: 'x', title: 'Done', status: 'completed', progressPercent: 100 })],
-      tagPresets: [],
+      tagPresets: emptyTagPresetsByDomain(),
       customWindowStart: '2025-06-01',
       customWindowEnd: '2025-06-30',
     })

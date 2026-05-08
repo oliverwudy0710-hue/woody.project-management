@@ -28,10 +28,10 @@ export function AddTaskModal({ open, onClose }: AddTaskModalProps) {
     setImplementationStart,
     implementationEnd,
     setImplementationEnd,
-    categorySelect,
-    setCategorySelect,
-    categoryCustom,
-    setCategoryCustom,
+    domain,
+    setDomain,
+    subTag,
+    setSubTag,
     titleError,
     periodError,
     submit,
@@ -53,7 +53,7 @@ export function AddTaskModal({ open, onClose }: AddTaskModalProps) {
       onClose={onClose}
       titleId="add-task-dialog-title"
       title="新增任务"
-      zClass="z-50"
+      zClass="z-[60]"
       panelMaxWidthClass="max-w-2xl"
       backdropTestId="add-task-modal-backdrop"
       panelTestId="add-task-modal"
@@ -136,11 +136,11 @@ export function AddTaskModal({ open, onClose }: AddTaskModalProps) {
         ) : null}
 
         <TaskCategoryFields
-          categorySelect={categorySelect}
-          onCategorySelectChange={setCategorySelect}
-          categoryCustom={categoryCustom}
-          onCategoryCustomChange={setCategoryCustom}
-          savedTags={tagPresets}
+          domain={domain}
+          onDomainChange={setDomain}
+          subTag={subTag}
+          onSubTagChange={setSubTag}
+          savedSubTags={tagPresets[domain]}
         />
 
         <TaskAttachmentsField attachments={attachments} onChange={setAttachments} />
